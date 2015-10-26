@@ -22,6 +22,71 @@ Board::Board(Color firstPlayer)
   UpdateLegalMoves();
 }
 
+Board::Board(SpaceHolder currentBoard[8][8], SpaceHolder legalMoves[8][8], Color turn, OthelloPoint move)
+{
+  for (int ii = 0; ii < BoardWidth; ii++)
+  {
+    for (int jj = 0; jj < BoardHeight; jj++)
+    {
+      _board[ii][jj] = currentBoard[ii][jj];
+      _legalMovesBoard[ii][jj] = legalMoves[ii][jj];
+    }
+  }
+  _turn = turn;
+  
+  MakeMove(turn, move);
+}
+
+Board Board::GetResultantBoard(Color color, OthelloPoint othelloPoint)
+{
+  if (_turn != color)
+  {
+    std::cerr << "Somebody is going out of turn!";
+    exit(-1);
+  }
+  
+  return Board(_board, _legalMovesBoard, _turn, othelloPoint);
+}
+
+int Board::GetNumCornersOccupied(Color color)
+{
+  int numCorners;
+  if(_board[0][0] != Empty && _board[0][0] == color)
+  {
+    numCorners++;
+  }
+  if(_board[0][BoardHeight-1] != Empty && _board[0][BoardHeight-1] == color)
+  {
+    numCorners++;
+  }
+  if(_board[BoardWidth-1][0] != Empty && _board[BoardWidth-1][0] == color)
+  {
+    numCorners++;
+  }
+  if(_board[BoardWidth-1][BoardHeight-1] != Empty && _board[BoardWidth-1][BoardHeight-1] == color)
+  {
+    numCorners++;
+  }
+  return numCorners;
+}
+
+
+int Board::GetScore(Color color)
+{
+  int score = 0;
+  for (int ii = 0; ii < BoardWidth; ii++)
+  {
+    for (int jj = 0; jj < BoardHeight; jj++)
+    {
+      if(_board[ii][jj] != Empty && _board[ii][jj] == color)
+      {
+	score++;
+      }
+    }
+  }
+  return score;
+}
+
 bool Board::MakeMove(Color color, OthelloPoint othelloPointMove)
 {
   if (_turn != color)
@@ -38,14 +103,13 @@ bool Board::MakeMove(Color color, OthelloPoint othelloPointMove)
       std::cerr << color << " is trying to make illegal move! Player should check IsLegalMove() first." << std::endl;
       exit(-1);
     }
-    UpdateLegalMoves(true, othelloPointMove);
+    UpdateLegalMoves(true, color, othelloPointMove);
     _board[othelloPointMove.GetX()][othelloPointMove.GetY()] = (SpaceHolder) color;
   }
   
   blackLegalMovestSet.clear();
   whiteLegalMovesSet.clear();
   UpdateLegalMoves();
-  DisplayBoard();
   if(blackLegalMovestSet.empty() && whiteLegalMovesSet.empty())
   {
     return true; //EOG
@@ -147,9 +211,9 @@ void Board::AddToLegalSet(SpaceHolder color, OthelloPoint point)
   }
 }
 
-void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
+void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 {
-  unsigned int start = clock();
+  //unsigned int start = clock();
   for (int ii = 0; ii < BoardWidth; ii++)
   {
     for (int jj = 0; jj < BoardHeight; jj++)
@@ -186,9 +250,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii-1; kk > 0 && _board[kk][jj] == color; kk--)
 	    {
@@ -215,9 +282,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii+1; kk < BoardWidth && _board[kk][jj] == color; kk++)
 	    {
@@ -244,9 +314,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = jj-1; kk > 0 && _board[ii][kk] == color; kk--)
 	    {
@@ -273,9 +346,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = jj+1; kk < BoardHeight && _board[ii][kk] == color; kk++)
 	    {
@@ -292,7 +368,7 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	SpaceHolder color = _board[ii-1][jj-1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii-2, ll = jj-2 ; kk >= 0 && ll >= 0 && _board[kk][ll] == color; kk--, ll--)
+	for (kk = ii-2, ll = jj-2 ; kk > 0 && ll > 0 && _board[kk][ll] == color; kk--, ll--)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -301,9 +377,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii-1, ll = jj-1; kk > 0 && ll > 0 && _board[kk][ll] == color; kk--, ll--)
 	    {
@@ -320,7 +399,7 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	SpaceHolder color = _board[ii+1][jj-1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii+2, ll = jj-2 ; kk <= BoardWidth && ll >= 0 && _board[kk][ll] == color; kk++, ll--)
+	for (kk = ii+2, ll = jj-2 ; kk < BoardWidth && ll > 0 && _board[kk][ll] == color; kk++, ll--)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -329,9 +408,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii+1, ll = jj-1; kk < BoardWidth && ll > 0 && _board[kk][ll] == color; kk++, ll--)
 	    {
@@ -348,7 +430,7 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	SpaceHolder color = _board[ii-1][jj+1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii-2, ll = jj+2 ; kk >= 0 && ll <= BoardHeight && _board[kk][ll] == color; kk--, ll++)
+	for (kk = ii-2, ll = jj+2 ; kk > 0 && ll < BoardHeight && _board[kk][ll] == color; kk--, ll++)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -357,9 +439,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii-1, ll = jj+1; kk > 0 && ll < BoardHeight && _board[kk][ll] == color; kk--, ll++)
 	    {
@@ -376,7 +461,7 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	SpaceHolder color = _board[ii+1][jj+1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii+2, ll = jj+2 ; kk <= BoardWidth && ll <= BoardHeight && _board[kk][ll] == color; kk++, ll++)
+	for (kk = ii+2, ll = jj+2 ; kk < BoardWidth && ll < BoardHeight && _board[kk][ll] == color; kk++, ll++)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -385,9 +470,12 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
 	  //then we found the same color along this route - the current pos is legal for him!
 	  if (_legalMovesBoard[ii][jj] == Empty || _legalMovesBoard[ii][jj] == opposingColor) {_legalMovesBoard[ii][jj] = opposingColor;}
 	  else {_legalMovesBoard[ii][jj] = Both;}
-	  AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  if (!flip)
+	  {
+	    AddToLegalSet(opposingColor, OthelloPoint(ii,jj));
+	  }
 	  
-	  if (flip)
+	  if (flip && opposingColor == thisPlayer)
 	  {
 	    for (kk = ii+1, ll = jj+1; kk < BoardWidth && ll < BoardHeight && _board[kk][ll] == color; kk++, ll++)
 	    {
@@ -403,7 +491,21 @@ void Board::UpdateLegalMoves(bool flip, OthelloPoint point)
       }
     }
   }
-  std::cout << "Time to UpdateLegalMoves: " << clock() - start <<  " ms" << std::endl;
+  //std::cout << "Time to UpdateLegalMoves: " << clock() - start <<  " ms" << std::endl;
+}
+
+Color Board::GetOpposingColor(Color color)
+{
+  switch (color)
+  {
+    case WhitePlayer:
+      return BlackPlayer;
+    case BlackPlayer:
+      return WhitePlayer;
+    default:
+      std::cerr << "NOPE!!!!!" << std::endl;
+      exit(-1);
+  }
 }
 
 SpaceHolder Board::GetOpposingColor(SpaceHolder color)

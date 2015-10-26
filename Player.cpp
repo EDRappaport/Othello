@@ -1,3 +1,5 @@
+#include <ctime>
+
 #include "Player.hpp"
 #include "PlayerMover.hpp"
 
@@ -18,6 +20,7 @@ Player::Player(Color playerColor, bool isComputer)
 
 bool Player::MakeMove(Board& board)
 {
+  unsigned int start = clock();
   if (_color != board.GetTurn())
   {
     std::cerr << "Player is trying to make a move even though it's not his turn!!!";
@@ -32,6 +35,7 @@ bool Player::MakeMove(Board& board)
     selectedLegalMove = board.IsLegalMove(_color, move);
   }
   std::cout << "Player selected move:" << move.ToString() << std::endl;
+  std::cout << "Time to select move: " << clock() - start <<  " ms" << std::endl;
   return board.MakeMove(_color, move);
 }
 

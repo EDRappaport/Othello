@@ -44,7 +44,25 @@ int main(int argc, char **argv) {
   while(true)
   {
     if (p1.MakeMove(board)) {break;}
+    board.DisplayBoard();
     if (p2.MakeMove(board)) {break;}
+    board.DisplayBoard();
+  }
+  std::cout << "FINAL BOARD:" << std::endl;
+  board.DisplayBoard();
+  std::cout << "Final Score: Black has: " << board.GetScore(BlackPlayer) << " points.  White has: "
+    << board.GetScore(WhitePlayer) << " points." << std::endl;
+  if (board.GetScore(WhitePlayer) > board.GetScore(BlackPlayer))
+  {
+    std::cout << "White has won!!!" << std::endl;
+  }
+  else if (board.GetScore(BlackPlayer) > board.GetScore(WhitePlayer))
+  {
+    std::cout << "Black has won!!!" << std::endl;
+  }
+  else
+  {
+    std::cout << "Black and White have tied." << std::endl;
   }
   
   return 0;
