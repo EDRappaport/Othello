@@ -1,4 +1,5 @@
 #include <limits> 
+#include <ctime>
 #include <time.h>  
 
 #include "PlayerMover.hpp"
@@ -29,14 +30,36 @@ OthelloPoint ComputerPlayerMover::SelectMove(Board board)
 OthelloPoint ComputerPlayerMover::AlphaBetaSearch(Board board)
 {
   OthelloPoint othelloPoint = OthelloPoint();
-  int limit = _color == BlackPlayer ? 4 : 4;
-  MaxValueSearch(board, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), limit, othelloPoint);
-  return othelloPoint;
+  OthelloPoint bestMove = OthelloPoint();
+  bool shouldUseThisResponse; // used to rule out recommended move from incomplete iterations
+  _searchStartTime = clock();
+  for (int limit = 1; limit < 64; limit++)
+  {
+    MaxValueSearch(board, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), limit, shouldUseThisResponse, othelloPoint);
+    if (shouldUseThisResponse)
+    {
+      bestMove = othelloPoint;
+    }
+    else
+    {
+      break; //time out, we'll use the prev best
+    }
+  }
+  return bestMove;
 }
 
-int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int maxDepth, OthelloPoint& bestMove)
+int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth, OthelloPoint& bestMove)
 {
-  if (maxDepth == 0) {return BoardHeuristic(board);}
+  if (clock() - _searchStartTime > 4900)
+  {
+    didCompleteToDepth = false;
+    return 0;
+  }
+  if (maxDepth == 0)
+  {
+    didCompleteToDepth = true;
+    return BoardHeuristic(board);
+  }
   int val = std::numeric_limits<int>::min();
   int res;
   std::vector<OthelloPoint> allLegalMoves = board.GetAllLegalMoves(_color);
@@ -46,7 +69,7 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
     newBoard = board.GetResultantBoard(_color, allLegalMoves[i]);
     /*std::cout << "At MAX - trying this Board with maxDepth: " << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1);
+    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth);
     
     if (res > val)
     {
@@ -64,9 +87,18 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
   return val;
 }
 
-int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int maxDepth)
+int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth)
 {
-  if (maxDepth == 0) {return BoardHeuristic(board);}
+  if (clock() - _searchStartTime > 4900)
+  {
+    didCompleteToDepth = false;
+    return 0;
+  }
+  if (maxDepth == 0)
+  {
+    didCompleteToDepth = true;
+    return BoardHeuristic(board);
+  }
   int val = std::numeric_limits<int>::max();
   int res;
   std::vector<OthelloPoint> allLegalMoves = board.GetAllLegalMoves(board.GetOpposingColor(_color));
@@ -76,7 +108,7 @@ int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int ma
     newBoard = board.GetResultantBoard(board.GetOpposingColor(_color), allLegalMoves[i]);
     /*std::cout << "At MIN - trying this Board with maxDepth:" << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, fakeOthelloPoint);
+    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, fakeOthelloPoint);
     val = res < val ? res : val;
     if (val <= alpha) {return val;}
     beta = beta < val ? beta : val;
@@ -88,9 +120,20 @@ int ComputerPlayerMover::BoardHeuristic(Board board)
 {
   Color enemyColor = board.GetOpposingColor(_color);
   
-  float myCoins = board.GetScore(_color); // 0 -> 64
-  float enemyCoins = board.GetScore(enemyColor); // 0 -> 64
-  float parity = 100*(myCoins - enemyCoins)/(myCoins + enemyCoins); // -100 -> 100
+  int myDetailedPointScore, myFrontierCount, enemyDetailedPointScore, enemyFrontierCount;
+  float myCoins = board.GetScore(_color, myDetailedPointScore, myFrontierCount); // 0 -> 64
+  float enemyCoins = board.GetScore(enemyColor, enemyDetailedPointScore, enemyFrontierCount); // 0 -> 64
+  float coinRatio = 100*(myCoins - enemyCoins)/(myCoins + enemyCoins); // -100 -> 100
+  
+  float frontierRatio;
+  if (myFrontierCount + enemyFrontierCount != 0)
+  {
+    frontierRatio = 100* ((float) (myFrontierCount - enemyFrontierCount))/((float)(myFrontierCount + enemyFrontierCount)); // -100 -> 100
+  }
+  else
+  {
+    frontierRatio = 0;
+  }
   
   float myNumMoves = board.GetAllLegalMoves(_color).size(); // 0 -> lt 64
   float enemyNumMoves = board.GetAllLegalMoves(enemyColor).size(); // 0 -> lt 64
@@ -118,14 +161,14 @@ int ComputerPlayerMover::BoardHeuristic(Board board)
   
   if (_color == BlackPlayer)
   {
-    float heuristic = 20*parity + 15*cornerRatio + 10*mobility; //-220200 -> 220200
+    float heuristic = 20*coinRatio + 15*cornerRatio + 10*mobility + 10*myDetailedPointScore + 10*frontierRatio;
     std::cout << "B heuristic " << heuristic << std::endl;
     return heuristic;
   }
   else
   {
-    std::cout << "W heuristic " << parity << std::endl;
-    return parity;
+    std::cout << "W heuristic " << coinRatio << std::endl;
+    return coinRatio;
   }
 }
 

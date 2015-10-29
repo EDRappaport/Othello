@@ -29,11 +29,11 @@ int main(int argc, char **argv) {
     "Player 1 will go first - you may select whether Player 1 is Black or" << 
     "White and whether Player 1 is a human user or a Computer." << std::endl;
   std::cout << "What color shall player 1 be?? Please type either \'b\' or \'w\'." << std::endl;
-  char player1Color = GetUserInput(legalColors);
+  char player1Color = 'b';// GetUserInput(legalColors);
   std::cout << "Should player 1 be a human or computer?? Please type either \'h\' or \'c\'." << std::endl;
-  char player1Player = GetUserInput(legalPlayers);
+  char player1Player = 'c';// GetUserInput(legalPlayers);
   std::cout << "Should player 2 be a human or computer?? Please type either \'h\' or \'c\'." << std::endl;
-  char player2Player = GetUserInput(legalPlayers);  
+  char player2Player = 'c';//GetUserInput(legalPlayers);  
   
   Board board = Board(player1Color == 'b' ? BlackPlayer : WhitePlayer);
   board.DisplayBoard();
@@ -50,13 +50,14 @@ int main(int argc, char **argv) {
   }
   std::cout << "FINAL BOARD:" << std::endl;
   board.DisplayBoard();
-  std::cout << "Final Score: Black has: " << board.GetScore(BlackPlayer) << " points.  White has: "
-    << board.GetScore(WhitePlayer) << " points." << std::endl;
-  if (board.GetScore(WhitePlayer) > board.GetScore(BlackPlayer))
+  int i;
+  std::cout << "Final Score: Black has: " << board.GetScore(BlackPlayer,i,i) << " points.  White has: "
+    << board.GetScore(WhitePlayer,i,i) << " points." << std::endl;
+  if (board.GetScore(WhitePlayer,i,i) > board.GetScore(BlackPlayer,i,i))
   {
     std::cout << "White has won!!!" << std::endl;
   }
-  else if (board.GetScore(BlackPlayer) > board.GetScore(WhitePlayer))
+  else if (board.GetScore(BlackPlayer,i,i) > board.GetScore(WhitePlayer,i,i))
   {
     std::cout << "Black has won!!!" << std::endl;
   }

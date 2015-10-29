@@ -19,12 +19,14 @@ public:
   OthelloPoint SelectMove(Board board);
 private:
   OthelloPoint AlphaBetaSearch(Board board);
-  int MaxValueSearch(Board board, int alpha, int beta, int maxDepth, OthelloPoint& bestMove);
-  int MinValueSearch(Board board, int alpha, int beta, int maxDepth);
+  int MaxValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth, OthelloPoint& bestMove);
+  int MinValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth);
   int BoardHeuristic(Board board);
   
   Board newBoard = Board(BlackPlayer);
   OthelloPoint fakeOthelloPoint = OthelloPoint();
+  
+  unsigned int _searchStartTime;
 };
 
 class PersonPlayerMover : public PlayerMover

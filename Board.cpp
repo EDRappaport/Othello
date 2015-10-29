@@ -71,16 +71,35 @@ int Board::GetNumCornersOccupied(Color color)
 }
 
 
-int Board::GetScore(Color color)
+int Board::GetScore(Color color, int& detailedPointScore, int& frontierCount)
 {
   int score = 0;
+  detailedPointScore = 0;
+  frontierCount = 0;
   for (int ii = 0; ii < BoardWidth; ii++)
   {
     for (int jj = 0; jj < BoardHeight; jj++)
     {
-      if(_board[ii][jj] != Empty && _board[ii][jj] == color)
+      if(_board[ii][jj] != Empty)
       {
-	score++;
+	if (_board[ii][jj] == color)
+	{
+	  score++;
+	  detailedPointScore += _pieceScore[ii][jj];
+	  for (int kk = 0; kk < 8; kk++)
+	  {
+	    int x = ii + _xDirections[kk];
+	    int y = jj + _yDirections[kk];
+	    if(x >= 0 && x < BoardWidth && y >= 0 && y < BoardHeight && _board[x][y] == Empty)
+	    {
+	      frontierCount++;
+	    }
+	  }
+	}
+	else
+	{
+	  detailedPointScore -= _pieceScore[ii][jj];
+	}
       }
     }
   }
