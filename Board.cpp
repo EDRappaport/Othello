@@ -1,9 +1,10 @@
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <ctime>
 #include "Board.hpp"
 
-Board::Board(Color firstPlayer)
+Board::Board()
 {
   for (int ii = 0; ii < BoardWidth; ii++)
   {
@@ -17,7 +18,7 @@ Board::Board(Color firstPlayer)
   _board[3][4] = Black;
   _board[4][3] = Black;
   
-  _turn = firstPlayer;
+  _turn = BlackPlayer;
   
   UpdateLegalMoves();
 }
@@ -36,6 +37,44 @@ Board::Board(SpaceHolder currentBoard[8][8], SpaceHolder legalMoves[8][8], Color
   
   MakeMove(turn, move);
 }
+
+Board::Board(std::ifstream& savedBoardFile, int* timeoutSeconds)
+{
+  int c;
+  for (int ii = 0; ii < BoardWidth; ii++)
+  {
+    for (int jj = 0; jj < BoardHeight; jj++)
+    {
+      savedBoardFile >> c;
+      if(!savedBoardFile || c < 0 || c >2)
+      {
+	std::cerr <<"Invalid file format, try again!";
+	exit(-1);
+      }
+      _board[ii][jj] = (SpaceHolder)(c);
+    }
+  }
+  
+  savedBoardFile >> c;
+  if(!savedBoardFile || c < 1 || c >2)
+  {
+    std::cerr <<"Invalid file format, try again!";
+    exit(-1);
+  }
+  _turn = (Color)(c);
+  
+  int i;
+  savedBoardFile >> i;
+  if(!savedBoardFile || c < 0)
+  {
+    std::cerr <<"Invalid file format, try again!";
+    exit(-1);
+  }
+  *timeoutSeconds = i;
+  
+  UpdateLegalMoves();
+}
+
 
 Board Board::GetResultantBoard(Color color, OthelloPoint othelloPoint)
 {
@@ -166,6 +205,8 @@ Color Board::GetTurn()
 
 void Board::DisplayBoard()
 {
+  std::cout << "------------------------------------------------" << std::endl;
+  std::cout << "Current Board: " << std::endl;
   std::cout << "  A  B  C  D  E  F  G  H" << std::endl;
   for (int ii = 0; ii < BoardWidth; ii++)
   {
@@ -176,6 +217,8 @@ void Board::DisplayBoard()
     }
     std::cout << std::endl;
   }
+  std::cout << "------------------------------------------------" << std::endl;
+  std::cout << "------------------------------------------------" << std::endl << std::endl << std::endl;
 }
 
 void Board::PrintColorSpace(SpaceHolder spaceHolder, SpaceHolder legalMove)
@@ -232,7 +275,6 @@ void Board::AddToLegalSet(SpaceHolder color, OthelloPoint point)
 
 void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 {
-  //unsigned int start = clock();
   for (int ii = 0; ii < BoardWidth; ii++)
   {
     for (int jj = 0; jj < BoardHeight; jj++)
@@ -292,7 +334,7 @@ void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	// since the spot directly to the right is of color, maybe opposingColor can go here
 	int kk;
-	for (kk = ii+2; kk < BoardWidth && _board[kk][jj] == color; kk++)
+	for (kk = ii+2; kk < BoardWidth-1 && _board[kk][jj] == color; kk++)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -356,7 +398,7 @@ void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	// since the spot directly down is of color, maybe opposingColor can go here
 	int kk;
-	for (kk = jj+2; kk < BoardHeight && _board[ii][kk] == color; kk++)
+	for (kk = jj+2; kk < BoardHeight-1 && _board[ii][kk] == color; kk++)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -418,7 +460,7 @@ void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 	SpaceHolder color = _board[ii+1][jj-1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii+2, ll = jj-2 ; kk < BoardWidth && ll > 0 && _board[kk][ll] == color; kk++, ll--)
+	for (kk = ii+2, ll = jj-2 ; kk < BoardWidth-1 && ll > 0 && _board[kk][ll] == color; kk++, ll--)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -449,7 +491,7 @@ void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 	SpaceHolder color = _board[ii-1][jj+1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii-2, ll = jj+2 ; kk > 0 && ll < BoardHeight && _board[kk][ll] == color; kk--, ll++)
+	for (kk = ii-2, ll = jj+2 ; kk > 0 && ll < BoardHeight-1 && _board[kk][ll] == color; kk--, ll++)
 	{
 	  //keep moving while we hit the same color
 	}
@@ -480,7 +522,7 @@ void Board::UpdateLegalMoves(bool flip, Color thisPlayer, OthelloPoint point)
 	SpaceHolder color = _board[ii+1][jj+1];
 	SpaceHolder opposingColor = GetOpposingColor(color);
 	int kk, ll;
-	for (kk = ii+2, ll = jj+2 ; kk < BoardWidth && ll < BoardHeight && _board[kk][ll] == color; kk++, ll++)
+	for (kk = ii+2, ll = jj+2 ; kk < BoardWidth-1 && ll < BoardHeight-1 && _board[kk][ll] == color; kk++, ll++)
 	{
 	  //keep moving while we hit the same color
 	}

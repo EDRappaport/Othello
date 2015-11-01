@@ -1,12 +1,13 @@
 #include <limits> 
-#include <ctime>
 #include <time.h>  
 
 #include "PlayerMover.hpp"
 
-ComputerPlayerMover::ComputerPlayerMover(Color color)
+
+ComputerPlayerMover::ComputerPlayerMover(Color color, int moveTimeoutSeconds)
 {
   _color = color;
+  _timeout = moveTimeoutSeconds * 1000;
 }
 
 OthelloPoint ComputerPlayerMover::SelectMove(Board board)
@@ -17,14 +18,8 @@ OthelloPoint ComputerPlayerMover::SelectMove(Board board)
   {
     return OthelloPoint();
   }
-  /*int len = allLegalMoves.size();
-  std::cout << allLegalMoves[0].ToString();
-  int random = rand() % len;
-  std::cout << "Random num: " << random << "; Len: " << len << std::endl;*/
-  
+ 
   return AlphaBetaSearch(board);
-  
-  //return allLegalMoves[random];
 }
 
 OthelloPoint ComputerPlayerMover::AlphaBetaSearch(Board board)
@@ -32,25 +27,35 @@ OthelloPoint ComputerPlayerMover::AlphaBetaSearch(Board board)
   OthelloPoint othelloPoint = OthelloPoint();
   OthelloPoint bestMove = OthelloPoint();
   bool shouldUseThisResponse; // used to rule out recommended move from incomplete iterations
-  _searchStartTime = clock();
+  bool didFinishGame = false;
+  _searchStartTime = Clock::now();
   for (int limit = 1; limit < 64; limit++)
   {
-    MaxValueSearch(board, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), limit, shouldUseThisResponse, othelloPoint);
-    if (shouldUseThisResponse)
+    MaxValueSearch(board, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), limit,
+		   shouldUseThisResponse, false, didFinishGame, othelloPoint);
+    if (shouldUseThisResponse || didFinishGame)
     {
       bestMove = othelloPoint;
+      if (didFinishGame)
+      {
+	std::cout << "Search depth: " << "To the END! (" << limit << ")" <<std::endl;
+	break;
+      }
     }
     else
     {
+      std::cout << "Search depth: " << limit <<std::endl;
       break; //time out, we'll use the prev best
     }
   }
   return bestMove;
 }
 
-int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth, OthelloPoint& bestMove)
+int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int maxDepth,
+					bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame,
+					OthelloPoint& bestMove)
 {
-  if (clock() - _searchStartTime > 4900)
+  if (std::chrono::duration_cast<milliseconds>(Clock::now() - _searchStartTime).count() > _timeout - 10)
   {
     didCompleteToDepth = false;
     return 0;
@@ -63,18 +68,39 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
   int val = std::numeric_limits<int>::min();
   int res;
   std::vector<OthelloPoint> allLegalMoves = board.GetAllLegalMoves(_color);
-  if (allLegalMoves.size() == 0) {allLegalMoves.push_back(OthelloPoint());}
+  if (allLegalMoves.size() == 0)
+  {
+    if (calledFromEmptyMove)
+    {
+      // prev player had no moves, and I also have no moves....
+      int nothing;
+      didFinishGame = true;
+      return board.GetScore(_color,nothing,nothing);
+    }
+    allLegalMoves.push_back(OthelloPoint());
+    calledFromEmptyMove = true;
+  }
   for (int i = 0; i < allLegalMoves.size(); i++)
   {
     newBoard = board.GetResultantBoard(_color, allLegalMoves[i]);
     /*std::cout << "At MAX - trying this Board with maxDepth: " << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth);
+    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove, didFinishGame);
     
     if (res > val)
     {
       val = res;
       bestMove = allLegalMoves[i];
+    }
+    else if(res == val)
+    {
+      // randomly decide btwn moves if eq.
+      // in the end there will a greater prob for the earlier bestMoves to remain,
+      // but since they have a predicted eq value, this is not so bad. But this can be fixed
+      if (rand()%2 == 1)
+      {
+	bestMove = allLegalMoves[i];
+      }
     }
     else
     {
@@ -87,9 +113,10 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
   return val;
 }
 
-int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth)
+int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int maxDepth,
+					bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame)
 {
-  if (clock() - _searchStartTime > 4900)
+  if (std::chrono::duration_cast<milliseconds>(Clock::now() - _searchStartTime).count() > _timeout - 10)
   {
     didCompleteToDepth = false;
     return 0;
@@ -102,13 +129,24 @@ int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int ma
   int val = std::numeric_limits<int>::max();
   int res;
   std::vector<OthelloPoint> allLegalMoves = board.GetAllLegalMoves(board.GetOpposingColor(_color));
-  if (allLegalMoves.size() == 0) {allLegalMoves.push_back(OthelloPoint());}
+  if (allLegalMoves.size() == 0)
+  {
+    if (calledFromEmptyMove)
+    {
+      // prev player had no moves, and I also have no moves....
+      int nothing;
+      didFinishGame = true;
+      return board.GetScore(board.GetOpposingColor(_color),nothing,nothing);
+    }
+    allLegalMoves.push_back(OthelloPoint());
+    calledFromEmptyMove = true;
+  }
   for (int i = 0; i < allLegalMoves.size(); i++)
   {
     newBoard = board.GetResultantBoard(board.GetOpposingColor(_color), allLegalMoves[i]);
     /*std::cout << "At MIN - trying this Board with maxDepth:" << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, fakeOthelloPoint);
+    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove, didFinishGame, fakeOthelloPoint);
     val = res < val ? res : val;
     if (val <= alpha) {return val;}
     beta = beta < val ? beta : val;
@@ -161,14 +199,16 @@ int ComputerPlayerMover::BoardHeuristic(Board board)
   
   if (_color == BlackPlayer)
   {
-    float heuristic = 20*coinRatio + 15*cornerRatio + 10*mobility + 10*myDetailedPointScore + 10*frontierRatio;
-    std::cout << "B heuristic " << heuristic << std::endl;
+    float heuristic = 5*coinRatio + 2500*cornerRatio + 10*mobility + 20*myDetailedPointScore + 10*frontierRatio;
+    //std::cout << "B heuristic " << heuristic << std::endl;
     return heuristic;
   }
   else
   {
-    std::cout << "W heuristic " << coinRatio << std::endl;
-    return coinRatio;
+    float heuristic = 5*coinRatio + 2500*cornerRatio + 10*mobility + 20*myDetailedPointScore;// + 10*frontierRatio;
+    //std::cout << "W heuristic " << coinRatio << std::endl;
+    //return 20*coinRatio + 150*cornerRatio;
+    return heuristic;
   }
 }
 

@@ -27,10 +27,15 @@ bool OthelloPoint::operator==(OthelloPoint other) const
 
 std::string OthelloPoint::ToString()
 {
+  if (_x == -1 || _y == -1)
+  {
+    return "No Move";
+  }
   const std::string openPoint("<");
   const std::string middlePoint (", ");
   const std::string endPoint (">");;
-  return openPoint + std::to_string(_x) + middlePoint + std::to_string(_y) +  endPoint;
+  char letterPos = (_y + 'A');
+  return openPoint + std::to_string(_x+1) + middlePoint + letterPos +  endPoint;
 }
 
 int OthelloPoint::GetX() const

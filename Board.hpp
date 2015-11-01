@@ -2,6 +2,7 @@
 #define _BOARD_H
 
 #include <iostream>
+#include <fstream>
 #include <stdint.h>
 #include <stdlib.h>
 #include <queue>
@@ -16,7 +17,8 @@
 class Board
 {
 public:
-  Board(Color firstPlayer);
+  Board();
+  Board(std::ifstream& savedBoardFile, int* timeoutSeconds);
   void DisplayBoard();
   
   // returns true if EOG

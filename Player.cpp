@@ -1,16 +1,15 @@
-#include <ctime>
 
 #include "Player.hpp"
 #include "PlayerMover.hpp"
 
-Player::Player(Color playerColor, bool isComputer)
+Player::Player(Color playerColor, bool isComputer, int moveTimeoutSeconds)
 {
   _color = playerColor;
   _isComputer = isComputer;
   
   if (_isComputer)
   {
-    _playerMover = new ComputerPlayerMover(_color);
+    _playerMover = new ComputerPlayerMover(_color, moveTimeoutSeconds);
   }
   else
   {
@@ -19,8 +18,9 @@ Player::Player(Color playerColor, bool isComputer)
 }
 
 bool Player::MakeMove(Board& board)
-{
-  unsigned int start = clock();
+{  
+  Clock::time_point start_time = Clock::now();
+
   if (_color != board.GetTurn())
   {
     std::cerr << "Player is trying to make a move even though it's not his turn!!!";
@@ -34,8 +34,11 @@ bool Player::MakeMove(Board& board)
     move = _playerMover->SelectMove(board);
     selectedLegalMove = board.IsLegalMove(_color, move);
   }
-  std::cout << "Player selected move:" << move.ToString() << std::endl;
-  std::cout << "Time to select move: " << clock() - start <<  " ms" << std::endl;
+
+  Clock::time_point current_time = Clock::now();
+  double moveTime = (double)std::chrono::duration_cast<milliseconds>(current_time - start_time).count() / 1000;
+  std::cout << "Time to select move: " << moveTime << " s." << std::endl;
+  std::cout << "Player selected move: " << move.ToString() << std::endl;
   return board.MakeMove(_color, move);
 }
 

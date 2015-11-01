@@ -1,8 +1,13 @@
 #ifndef _PLAYERMOVER_H
 #define _PLAYERMOVER_H
 
+#include <chrono>
+
 #include "OthelloPoint.hpp"
 #include "Board.hpp"
+
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::milliseconds milliseconds;
 
 class PlayerMover
 {
@@ -15,18 +20,25 @@ protected:
 class ComputerPlayerMover : public PlayerMover
 {
 public:
-  ComputerPlayerMover(Color color);
+  ComputerPlayerMover(Color color, int moveTimeoutSeconds);
   OthelloPoint SelectMove(Board board);
 private:
   OthelloPoint AlphaBetaSearch(Board board);
-  int MaxValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth, OthelloPoint& bestMove);
-  int MinValueSearch(Board board, int alpha, int beta, int maxDepth, bool& didCompleteToDepth);
+  
+  int MaxValueSearch(Board board, int alpha, int beta, int maxDepth,
+		     bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame,
+		     OthelloPoint& bestMove);
+  int MinValueSearch(Board board, int alpha, int beta, int maxDepth,
+		     bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame);
+  
   int BoardHeuristic(Board board);
   
-  Board newBoard = Board(BlackPlayer);
+  Board newBoard = Board();
   OthelloPoint fakeOthelloPoint = OthelloPoint();
   
-  unsigned int _searchStartTime;
+  Clock::time_point _searchStartTime;
+  
+  double _timeout;
 };
 
 class PersonPlayerMover : public PlayerMover

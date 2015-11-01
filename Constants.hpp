@@ -4,15 +4,15 @@
 enum SpaceHolder : int8_t
 {
   Empty = 0,
-  White = 1,
-  Black = 2,
+  Black = 1,
+  White = 2,
   Both = 3, // used for the legalMovesBoard when both players can go there (if it was their turn)
 };
 
 enum Color : int8_t
 {
-  WhitePlayer = 1,
-  BlackPlayer = 2,
+  BlackPlayer = 1,
+  WhitePlayer = 2,
 };
   
 const std::string greenBackgroundBlackText = "\x1b[1;4;30;42m";
