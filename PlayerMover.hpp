@@ -26,10 +26,10 @@ private:
   OthelloPoint AlphaBetaSearch(Board board);
   
   int MaxValueSearch(Board board, int alpha, int beta, int maxDepth,
-		     bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame,
+		     bool& didCompleteToDepth, bool calledFromEmptyMove,
 		     OthelloPoint& bestMove);
   int MinValueSearch(Board board, int alpha, int beta, int maxDepth,
-		     bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame);
+		     bool& didCompleteToDepth, bool calledFromEmptyMove);
   
   int BoardHeuristic(Board board);
   

@@ -8,6 +8,11 @@ PersonPlayerMover::PersonPlayerMover(Color color)
 
 OthelloPoint PersonPlayerMover::SelectMove(Board board)
 {
+  if(board.GetAllLegalMoves(_color).size() == 0)
+  {
+    std::cout << "Player has no moves, so will not do anything." << std::endl;
+    return OthelloPoint();
+  }
   int row, column;
   GetUserMove(row, column);
   return OthelloPoint(row, column);
@@ -19,7 +24,7 @@ void PersonPlayerMover::GetUserMove(int& row, int& column)
   int localRow, localColumn1, localColumn2;
   while(true)
   {
-    std::cout << "Enter the row and column of your move - letter followed by number (for ex: 1D)" << std::endl;
+    std::cout << "Enter the row and column of your move - number followed by letter (for ex: 1D)" << std::endl;
     std::cin >> userCommand;
     
     if (userCommand.length() == 2)

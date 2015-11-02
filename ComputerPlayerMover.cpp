@@ -27,20 +27,14 @@ OthelloPoint ComputerPlayerMover::AlphaBetaSearch(Board board)
   OthelloPoint othelloPoint = OthelloPoint();
   OthelloPoint bestMove = OthelloPoint();
   bool shouldUseThisResponse; // used to rule out recommended move from incomplete iterations
-  bool didFinishGame = false;
   _searchStartTime = Clock::now();
-  for (int limit = 1; limit < 64; limit++)
+  for (int limit = 1; limit < 32; limit++)
   {
     MaxValueSearch(board, std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), limit,
-		   shouldUseThisResponse, false, didFinishGame, othelloPoint);
-    if (shouldUseThisResponse || didFinishGame)
+		   shouldUseThisResponse, false, othelloPoint);
+    if (shouldUseThisResponse)
     {
       bestMove = othelloPoint;
-      if (didFinishGame)
-      {
-	std::cout << "Search depth: " << "To the END! (" << limit << ")" <<std::endl;
-	break;
-      }
     }
     else
     {
@@ -52,13 +46,13 @@ OthelloPoint ComputerPlayerMover::AlphaBetaSearch(Board board)
 }
 
 int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int maxDepth,
-					bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame,
+					bool& didCompleteToDepth, bool calledFromEmptyMove,
 					OthelloPoint& bestMove)
 {
   if (std::chrono::duration_cast<milliseconds>(Clock::now() - _searchStartTime).count() > _timeout - 10)
   {
     didCompleteToDepth = false;
-    return 0;
+    return 0; // doesn't matter what goes back up if we didn't complete this depth
   }
   if (maxDepth == 0)
   {
@@ -73,9 +67,7 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
     if (calledFromEmptyMove)
     {
       // prev player had no moves, and I also have no moves....
-      int nothing;
-      didFinishGame = true;
-      return board.GetScore(_color,nothing,nothing);
+      return BoardHeuristic(board);
     }
     allLegalMoves.push_back(OthelloPoint());
     calledFromEmptyMove = true;
@@ -85,7 +77,7 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
     newBoard = board.GetResultantBoard(_color, allLegalMoves[i]);
     /*std::cout << "At MAX - trying this Board with maxDepth: " << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove, didFinishGame);
+    res = MinValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove);
     
     if (res > val)
     {
@@ -114,7 +106,7 @@ int ComputerPlayerMover::MaxValueSearch(Board board, int alpha, int beta, int ma
 }
 
 int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int maxDepth,
-					bool& didCompleteToDepth, bool calledFromEmptyMove, bool& didFinishGame)
+					bool& didCompleteToDepth, bool calledFromEmptyMove)
 {
   if (std::chrono::duration_cast<milliseconds>(Clock::now() - _searchStartTime).count() > _timeout - 10)
   {
@@ -134,9 +126,7 @@ int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int ma
     if (calledFromEmptyMove)
     {
       // prev player had no moves, and I also have no moves....
-      int nothing;
-      didFinishGame = true;
-      return board.GetScore(board.GetOpposingColor(_color),nothing,nothing);
+      return BoardHeuristic(board);
     }
     allLegalMoves.push_back(OthelloPoint());
     calledFromEmptyMove = true;
@@ -146,7 +136,7 @@ int ComputerPlayerMover::MinValueSearch(Board board, int alpha, int beta, int ma
     newBoard = board.GetResultantBoard(board.GetOpposingColor(_color), allLegalMoves[i]);
     /*std::cout << "At MIN - trying this Board with maxDepth:" << maxDepth << std::endl;
     newBoard.DisplayBoard();*/
-    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove, didFinishGame, fakeOthelloPoint);
+    res = MaxValueSearch(newBoard, alpha, beta, maxDepth-1, didCompleteToDepth, calledFromEmptyMove, fakeOthelloPoint);
     val = res < val ? res : val;
     if (val <= alpha) {return val;}
     beta = beta < val ? beta : val;
@@ -197,18 +187,20 @@ int ComputerPlayerMover::BoardHeuristic(Board board)
     cornerRatio = 0;
   }
   
-  if (_color == BlackPlayer)
+  int cornerClosenessScore = board.GetCornerClosenessScore(_color);
+  
+  /*if (_color == BlackPlayer)
   {
-    float heuristic = 5*coinRatio + 2500*cornerRatio + 10*mobility + 20*myDetailedPointScore + 10*frontierRatio;
+    float heuristic = 5*coinRatio + 250*cornerRatio + 15*mobility + 20*myDetailedPointScore + 25*frontierRatio + 10*cornerClosenessScore;
     //std::cout << "B heuristic " << heuristic << std::endl;
     return heuristic;
   }
   else
-  {
-    float heuristic = 5*coinRatio + 2500*cornerRatio + 10*mobility + 20*myDetailedPointScore;// + 10*frontierRatio;
+  {*/
+    float heuristic = 5*coinRatio + 2500*cornerRatio + 15*mobility + 20*myDetailedPointScore + 10*cornerClosenessScore;// + 10*frontierRatio;
     //std::cout << "W heuristic " << coinRatio << std::endl;
     //return 20*coinRatio + 150*cornerRatio;
     return heuristic;
-  }
+  //}
 }
 

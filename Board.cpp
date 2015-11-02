@@ -109,6 +109,33 @@ int Board::GetNumCornersOccupied(Color color)
   return numCorners;
 }
 
+int Board::GetCornerClosenessScore(Color color)
+{
+  Color opposingColor = GetOpposingColor(color);
+  int l;
+  if(_board[0][0] == Empty){
+    if(_board[1][1]==color) l-=13; else if(_board[1][1]==opposingColor) l+=13; 
+    if(_board[1][0]==color) l-=6; else if(_board[1][0]==opposingColor) l+=6; 
+    if(_board[0][1]==color) l-=6; else if(_board[0][1]==opposingColor) l+=6;
+  }
+  if(_board[0][7]==Empty){				
+    if(_board[1][6]==color) l-=13; else if(_board[1][6]==opposingColor) l+=13; 
+    if(_board[1][7]==color) l-=6; else if(_board[1][7]==opposingColor) l+=6; 
+    if(_board[0][6]==color) l-=6; else if(_board[0][6]==opposingColor) l+=6;
+  }
+    if(_board[7][0]==Empty){	
+    if(_board[6][1]==color) l-=13; else if(_board[6][1]==opposingColor) l+=13; 
+    if(_board[7][1]==color) l-=6; else if(_board[7][1]==opposingColor) l+=6; 
+    if(_board[6][0]==color) l-=6; else if(_board[6][0]==opposingColor) l+=6;
+  }
+    if(_board[7][7]==Empty){
+    if(_board[6][6]==color) l-=13; else if(_board[6][6]==opposingColor) l+=13;
+    if(_board[7][6]==color) l-=6; else if(_board[7][6]==opposingColor) l+=6; 
+    if(_board[6][7]==color) l-=6; else if(_board[6][7]==opposingColor) l+=6;
+  }
+  return l;
+}
+
 
 int Board::GetScore(Color color, int& detailedPointScore, int& frontierCount)
 {
